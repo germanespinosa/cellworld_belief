@@ -1,0 +1,19 @@
+{
+    "major": 0,
+    "minor": 0,
+    "build": 19,
+    "source_folder": "cellworld_belief",
+    "module_name": "cellworld_belief",
+    "package_name": "cellworld_belief",
+    "author": "author",
+    "author_email": "author@email",
+    "description": "",
+    "install_requires": [
+        "cellworld_game",
+        "torch"
+    ],
+    "license_type": "MIT",
+    "url": "",
+    "license_file": "../resources/license.txt",
+    "readme_file": "../resources/README.md"
+}
