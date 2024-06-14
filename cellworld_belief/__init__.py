@@ -11,3 +11,4 @@ from .arena_component import ArenaComponent
 from .noise_component import NoiseComponent
 from .no_belief_component import NoBeliefComponent
 from .proximity_component import ProximityComponent
+from .decreasing_belief_component import DecreasingBeliefComponent

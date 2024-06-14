@@ -16,6 +16,7 @@ class DirectedDiffusionComponent(BeliefStateComponent):
         self.source = None
         self.step = None
         self.speed_rate = None
+        self.self_indices = None
 
     def on_reset(self):
         self.start_time_step = 0
@@ -26,17 +27,22 @@ class DirectedDiffusionComponent(BeliefStateComponent):
         self.speed_rate = belief_state.other.max_forward_speed * self.diffusion_scale
         self.step_distance = self.speed_rate / belief_state.granularity
 
+    def on_self_location_update(self,
+                                self_location: cg.Point.type,
+                                self_indices: typing.Tuple[int, int],
+                                time_step: int) -> None:
+        self.self_indices = self_indices
+
     def on_other_location_update(self,
                                  other_location: cg.Point.type,
                                  other_indices: typing.Tuple[int, int],
                                  time_step: int) -> None:
-        self.source = self.belief_state.other_indices
-        target = self.belief_state.self_indices
-        distance = math.dist(self.source, target)
+        self.source = other_indices
+        distance = math.dist(self.source, self.self_indices)
         step_count = distance / self.step_distance
         if step_count > 0:
             self.start_time_step = time_step + 1
-            self.step = tuple((ti - si) / step_count for si, ti in zip(self.source, target))
+            self.step = tuple((ti - si) / step_count for si, ti in zip(self.source, self.self_indices))
             self.end_time_step = time_step + int(step_count)
         else:
             self.start_time_step = 0

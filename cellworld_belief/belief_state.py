@@ -2,7 +2,7 @@ import typing
 import torch
 from .belief_state_component import BeliefStateComponent
 from .utils import get_index
-from cellworld_game import CoordinateConverter, Polygon, Model, Point
+from cellworld_game import CoordinateConverter, Model, Point, AgentState, LineOfSight
 
 
 class BeliefState(object):
@@ -13,8 +13,7 @@ class BeliefState(object):
                  other_name: str,
                  definition: int,
                  components: typing.List[BeliefStateComponent],
-                 probability: float = 1.0,
-                 time_step: float = 0.25):
+                 probability: float = 1.0):
         if torch.cuda.is_available():
             self.device = torch.device("cuda")  # Set device to GPU
         else:
@@ -41,12 +40,8 @@ class BeliefState(object):
                 self.points[index][1] = y
                 index += 1
 
-        self.time_step = time_step
         self.probability = probability
-        self.self_indices = None
-        self.other_indices = None
-        self.self_location = None
-        self.other_location = None
+        self.last_known_other_location = None
         self.other_visible = False
         self.visibility_polygon = None
         self.probability_distribution = torch.ones(self.shape,
@@ -57,15 +52,15 @@ class BeliefState(object):
                                                   torch.arange(self.shape[0], device=self.device), indexing='xy')
         self.agent = model.agents[self.agent_name]
         self.other = model.agents[self.other_name]
-        self.agent_visibility = model.agents_visibility[self.agent_name]
         self.components = components
         self.start_probability = probability
         for component in self.components:
             component.set_belief_state(self)
             component.on_belief_state_set(belief_state=self)
+        self.tick_count = 0
 
         def on_reset(_):
-            self.time_step = 0
+            self.tick_count = 0
             self.probability = self.start_probability
             if self.probability > 0:
                 self.probability_distribution[:, :] = 1
@@ -80,6 +75,21 @@ class BeliefState(object):
             self.tick()
 
         self.model.add_event_handler("after_reset", on_reset)
+
+        def line_of_sight(other_agent_state: AgentState):
+            self.last_known_other_location = other_agent_state.location
+
+        self.model.line_of_sight.add_event_handler(f"{agent_name}_{other_name}", line_of_sight)
+        self.render_active = True
+        if self.model.render:
+            import pygame
+
+            def on_key_down(key: pygame.key):
+                if key == pygame.K_b:
+                    self.render_active = not self.render_active
+
+            self.model.view.add_event_handler("key_down", on_key_down)
+            self.model.view.add_render_step(self.render, z_index=25)
 
     def get_mask_in_radius(self,
                            point: Point.type,
@@ -140,24 +150,23 @@ class BeliefState(object):
 
     def tick(self):
         i, j, _, _, _, _ = self.get_location_indices(self.agent.state.location)
-        self.self_indices = (i, j)
         for component in self.components:
             component.on_self_location_update(self.agent.state.location,
-                                              self.self_indices,
+                                              (i, j),
                                               self.model.step_count)
 
-        if self.agent_visibility["agents"][self.other_name]:
-            i, j, _, _, _, _ = self.get_location_indices(self.other.state.location)
-            self.other_indices = (i, j)
+        if self.last_known_other_location:
+            i, j, _, _, _, _ = self.get_location_indices(self.last_known_other_location)
             self.other_visible = True
             for component in self.components:
-                component.on_other_location_update(self.other.state.location,
-                                                   self.other_indices,
+                component.on_other_location_update(self.last_known_other_location,
+                                                   (i, j),
                                                    self.model.step_count)
-        else:
-            for component in self.components:
-                component.on_visibility_update(self.agent_visibility["polygon"],
-                                               self.model.step_count)
+            self.last_known_other_location = None
+
+        for component in self.components:
+            component.on_visibility_update(self.agent.visibility_polygon,
+                                           self.model.step_count)
 
         for component in self.components:
             component.on_tick(self.probability_distribution,
@@ -170,13 +179,16 @@ class BeliefState(object):
         self.other_visible = False
         self.visibility_polygon = None
         self.other_location = None
-        self.self_location = None
         self.rendered = False
+        self.tick_count += 1
 
     def render(self, screen, coordinate_converter: CoordinateConverter):
+        if not self.render_active:
+            return
         import pygame
         # Create a surface capable of handling alpha
-        values = (self.probability_distribution * 255 / self.probability_distribution.max()).int().cpu().numpy()
+        factor = max(self.probability_distribution.max(), 1 / self.size)
+        values = (self.probability_distribution * 255 / factor).int().cpu().numpy()
         heatmap_surface = pygame.Surface(values.shape[::-1], pygame.SRCALPHA)
         pix_array = pygame.PixelArray(heatmap_surface)
         for y in range(values.shape[1]):
@@ -199,7 +211,7 @@ class BeliefState(object):
                                   dtype=torch.float32)
         probability_distribution = self.probability_distribution
         for i in range(num_steps):
-            time_step = self.time_step + 1
+            time_step = self.tick_count + i
             predictions[i, :, :] = probability_distribution
             probability_distribution = predictions[i, :, :]
             for component in self.components:
@@ -207,4 +219,3 @@ class BeliefState(object):
                                   time_step=time_step)
                 probability_distribution /= probability_distribution.sum()
         return predictions
-
