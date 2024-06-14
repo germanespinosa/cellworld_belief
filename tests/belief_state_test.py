@@ -7,6 +7,7 @@ env = cg.BotEvadeEnv(world_name="21_05",
                      render=True,
                      use_lppos=False,
                      use_predator=True)
+
 DB = belief.DecreasingBeliefComponent(rate=.05)
 NB = belief.NoBeliefComponent()
 LOS = belief.LineOfSightComponent()

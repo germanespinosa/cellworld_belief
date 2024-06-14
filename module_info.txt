@@ -1,12 +1,12 @@
 {
     "major": 0,
     "minor": 0,
-    "build": 28,
+    "build": 30,
     "source_folder": "cellworld_belief",
     "module_name": "cellworld_belief",
     "package_name": "cellworld_belief",
-    "author": "author",
-    "author_email": "author@email",
+    "author": "German Espinosa",
+    "author_email": "germanespinosa@gmail.com",
     "description": "",
     "install_requires": [
         "cellworld_game",
