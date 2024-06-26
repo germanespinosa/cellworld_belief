@@ -1,9 +1,11 @@
 import math
+import typing
+
 import numpy as np
 import torch
 
 
-def get_index(value, lower_bound, step):
+def get_index(value, lower_bound, step) -> typing.Tuple[int, int, float]:
     index_value = (value - lower_bound) / step
     low_bound = math.floor(index_value)
     distance = index_value - low_bound
@@ -17,7 +19,7 @@ def get_index(value, lower_bound, step):
 def gaussian_tensor(dimensions,
                     sigma,
                     center=None,
-                    device=torch.device('cpu')):
+                    device=torch.device('cpu')) -> torch.Tensor:
     width, height = dimensions
 
     if center is None:
@@ -38,7 +40,7 @@ def gaussian_tensor(dimensions,
     return gaussian
 
 
-def fuse_tensors(tensors, weights):
+def fuse_tensors(tensors, weights)-> torch.Tensor:
     if len(tensors) != len(weights):
         raise ValueError("Number of tensors and weights must match")
 
@@ -56,7 +58,7 @@ def fuse_tensors(tensors, weights):
     return fused_tensor
 
 
-def shift_tensor(tensor, displacement):
+def shift_tensor(tensor, displacement) -> torch.Tensor:
     def shift_tensor_int(displacement_int):
         d_x_int, d_y_int = displacement_int
         displaced = torch.zeros_like(tensor, device=tensor.device)

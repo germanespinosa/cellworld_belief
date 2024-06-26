@@ -2,7 +2,7 @@ import typing
 import torch
 from .belief_state_component import BeliefStateComponent
 from .utils import get_index
-from cellworld_game import CoordinateConverter, Model, Point, AgentState, LineOfSight
+from cellworld_game import CoordinateConverter, Model, Point, AgentState
 
 
 class BeliefState(object):
@@ -60,6 +60,7 @@ class BeliefState(object):
         self.tick_count = 0
 
         def on_reset(_):
+            print("IS RESETTING YO!")
             self.tick_count = 0
             self.probability = self.start_probability
             if self.probability > 0:
@@ -142,7 +143,7 @@ class BeliefState(object):
         probability = probability_distribution * within_distance
         return float(probability.sum())
 
-    def get_location_indices(self, location: tuple):
+    def get_location_indices(self, location: tuple) -> typing.Tuple[int, int, int, int, float, float]:
         x, y = location
         i, low_i, dist_i = get_index(x, self.min_x, self.granularity)
         j, low_j, dist_j = get_index(y, self.min_y, self.granularity)
