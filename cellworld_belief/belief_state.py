@@ -60,7 +60,6 @@ class BeliefState(object):
         self.tick_count = 0
 
         def on_reset(_):
-            print("IS RESETTING YO!")
             self.tick_count = 0
             self.probability = self.start_probability
             if self.probability > 0:
