@@ -24,4 +24,4 @@ class DecreasingBeliefComponent(BeliefStateComponent):
                 probability_distribution: torch.tensor,
                 time_step: int) -> None:
         if self.active:
-            self.belief_state.probability = self.belief_state.probability * (1 - self.rate)
+            probability_distribution *= (1 - self.rate)

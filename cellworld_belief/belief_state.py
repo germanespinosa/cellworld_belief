@@ -194,6 +194,7 @@ class BeliefState(object):
         for y in range(values.shape[1]):
             for x in range(values.shape[0]):
                 value = values[values.shape[0] - x - 1, y]
+                value = max(value, 0)
                 pix_array[y, x] = (255, 0, 0, value)
 
         # Delete the pixel array to unlock the surface

@@ -1,7 +1,7 @@
 {
     "major": 0,
     "minor": 0,
-    "build": 33,
+    "build": 34,
     "source_folder": "cellworld_belief",
     "module_name": "cellworld_belief",
     "package_name": "cellworld_belief",
