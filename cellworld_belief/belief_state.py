@@ -13,7 +13,8 @@ class BeliefState(object):
                  other_name: str,
                  definition: int,
                  components: typing.List[BeliefStateComponent],
-                 probability: float = 1.0):
+                 probability: float = 1.0,
+                 color: typing.Tuple[int, int, int] = (255, 0, 0)):
         if torch.cuda.is_available():
             self.device = torch.device("cuda")  # Set device to GPU
         else:
@@ -58,6 +59,7 @@ class BeliefState(object):
             component.set_belief_state(self)
             component.on_belief_state_set(belief_state=self)
         self.tick_count = 0
+        self.color = color
 
         def on_reset(_):
             self.tick_count = 0
@@ -195,7 +197,7 @@ class BeliefState(object):
             for x in range(values.shape[0]):
                 value = values[values.shape[0] - x - 1, y]
                 value = max(value, 0)
-                pix_array[y, x] = (255, 0, 0, value)
+                pix_array[y, x] = self.color + (value,)
 
         # Delete the pixel array to unlock the surface
         del pix_array
